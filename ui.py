@@ -24,8 +24,11 @@ class GoUI:
 
         self.game = Game(BOARD_SIZE)
         self.sidebar_x = (BOARD_SIZE - 1) * CELL_SIZE + MARGIN * 2
-        self.pass_button = pygame.Rect(self.sidebar_x + 40, HEIGHT - 80, 120, 40)
+        self.pass_button = pygame.Rect(self.sidebar_x + 40, HEIGHT - 70, 120, 40)
         self.font = pygame.font.SysFont("Arial", 20)
+
+        self.undo_button = pygame.Rect(self.sidebar_x + 40, HEIGHT - 130, 120, 40) # x, y, 宽度, 高度 (根据你的窗口大小调整)
+        
 
     def board_to_pixel(self, r, c):
         x = MARGIN + c * CELL_SIZE
@@ -105,16 +108,27 @@ class GoUI:
         self.screen.blit(text_b, (self.sidebar_x + 20, 160))
         self.screen.blit(text_w, (self.sidebar_x + 20, 190))
 
+        # Undo button 
+        # current_undo_color = self.undo_btn_color if self.game.last_state else (150, 150, 150)
+        pygame.draw.rect(self.screen, (0, 0, 0), self.undo_button)
+        pygame.draw.rect(self.screen, (255, 255, 255), self.undo_button, 2)
+        undo_text = self.font.render("Undo", True, (255, 255, 255))
+        self.screen.blit(
+            undo_text,
+            (self.undo_button.centerx - undo_text.get_width() // 2,
+            self.undo_button.centery - undo_text.get_height() // 2)
+        )
+
         # PASS button
         pygame.draw.rect(self.screen, (0, 0, 0), self.pass_button)
         pygame.draw.rect(self.screen, (255, 255, 255), self.pass_button, 2)
-
         btn_text = self.font.render("PASS", True, (255, 255, 255))
         self.screen.blit(
             btn_text,
             (self.pass_button.centerx - btn_text.get_width() // 2,
             self.pass_button.centery - btn_text.get_height() // 2)
         )
+
         if self.game.last_error:
             error_text = self.font.render(self.game.last_error, True, (255, 80, 80))
             self.screen.blit(error_text, (self.sidebar_x + 20, 120))
@@ -139,9 +153,24 @@ class GoUI:
                     if self.pass_button.collidepoint(x, y):
                         self.game.pass_turn()
                         continue
+                    
+                    # click to UNDO
+                    if self.undo_button.collidepoint(x, y):
+                        if self.game.undo():
+                            print("Undo success")
+                        else:
+                            print("Cannot undo")
+                        continue
                     # click the board
                     r, c = self.pixel_to_board(x, y)
                     self.game.play_move(r, c)
+                
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_u:
+                        if self.game.undo():
+                            print("Undo success")
+                        else:
+                            print("Cannot undo")
 
             if not self.game.game_over:
 
@@ -157,17 +186,10 @@ class GoUI:
 
     def draw_game_over(self):
         score = self.game.final_score
-
-        # =========================
-        # 1. 半透明遮罩
-        # =========================
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         self.screen.blit(overlay, (0, 0))
 
-        # =========================
-        # 2. 中心面板
-        # =========================
         box_w, box_h = 300, 200
         box = pygame.Rect(
             WIDTH // 2 - box_w // 2,

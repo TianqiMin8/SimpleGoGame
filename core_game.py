@@ -1,7 +1,10 @@
 # core_game.py
+# TODO: Choose AI / Human can play first
+# TODO: Allow human play all the move
+
 
 from collections import deque
-from ai import RandomAI
+from ai import SmartAI
 
 EMPTY = 0
 BLACK = 1
@@ -28,7 +31,6 @@ class Board:
         return new_board
 
 
-
 class Game:
     def __init__(self, size=9):
         self.board = Board(size)
@@ -38,9 +40,22 @@ class Game:
         self.previous_board = None
         self.last_error = ""
         self.captured = {BLACK: 0, WHITE: 0}
-        self.ai = RandomAI(WHITE)
+        self.ai = SmartAI(WHITE)
         self.last_move = None  # form: (row, col)
+        self.last_state = None
 
+    def _get_current_state(self):
+        """Save current status into history"""
+        state = {
+            'grid': [row[:] for row in self.board.grid],
+            'current_player': self.current_player,
+            'last_move': self.last_move,
+            'previous_board_grid': [row[:] for row in self.previous_board.grid] if self.previous_board else None,
+            'captured': self.captured.copy(),
+            'pass_count': self.pass_count,
+            'game_over': self.game_over
+        }
+        return state
 
     def _simulate_move(self, r, c, player):
         """
@@ -111,6 +126,9 @@ class Game:
     def play_move(self, r, c):
         if self.game_over:
             return False
+        
+        if self.current_player == BLACK:
+            self.last_state = self._get_current_state()
         
         legal, captured_stones, error = self._simulate_move(r, c, self.current_player)
         if not legal:
@@ -192,178 +210,28 @@ class Game:
     def get_score(self):
         from scoring import compute_score
         return compute_score(self.board)
-    # # =========================
-    # # 基础工具
-    # # =========================
-    # def switch_player(self):
-    #     self.current_player = BLACK if self.current_player == WHITE else WHITE
-
-    # def neighbors(self, r, c):
-    #     for dr, dc in [(1,0), (-1,0), (0,1), (0,-1)]:
-    #         yield r+dr, c+dc
-
-    # # =========================
-    # # 气 & 提子
-    # # =========================
-    # def get_group(self, board, r, c):
-    #     color = board.get(r, c)
-    #     if color == EMPTY:
-    #         return set()
-
-    #     visited = set()
-    #     stack = [(r, c)]
-    #     group = set()
-
-    #     while stack:
-    #         x, y = stack.pop()
-    #         if (x, y) in visited:
-    #             continue
-    #         visited.add((x, y))
-    #         group.add((x, y))
-
-    #         for nx, ny in self.neighbors(x, y):
-    #             if board.get(nx, ny) == color:
-    #                 stack.append((nx, ny))
-    #     return group
-
-    # def has_liberty(self, group):
-    #     for r, c in group:
-    #         for nr, nc in self.neighbors(r, c):
-    #             if self.board.get(nr, nc) == EMPTY:
-    #                 return True
-    #     return False
-
-    # def remove_group(self, group):
-    #     color = self.board.get(*next(iter(group)))  # the color of stone that get captured
-
-    #     for r, c in group:
-    #         self.board.set(r, c, EMPTY)
-
-    #     # Update the number of captured stones
-    #     if color in (BLACK, WHITE):
-    #         self.captured[self.current_player] += len(group)
-
     
-    # def play_move(self, r, c):
-    #     if self.game_over:
-    #         print("Game over")
-    #         return False
+
+    def undo(self):
+        if self.last_state is None:
+            print("Cannot undo")
+            return False
+            
+        state = self.last_state
         
-    #     self.last_error = ""
-    #     if self.board.get(r, c) is None:
-    #         self.last_error = "Out of bounds"
-    #         return False
-
-    #     if self.board.get(r, c) != EMPTY:
-    #         self.last_error = "Position occupied"
-    #         return False
+        self.board.grid = state['grid']
+        self.current_player = state['current_player']
+        self.last_move = state['last_move']
+        self.pass_count = state['pass_count']
+        self.game_over = state['game_over']
+        self.captured = state['captured']
         
-    #     old_board = self.board.copy()
-
-    #     # temporary move
-    #     self.board.set(r, c, self.current_player)
-
-    #     opponent = BLACK if self.current_player == WHITE else WHITE
-
-    #     # capture check
-    #     captured_any = False
-    #     for nr, nc in self.neighbors(r, c):
-    #         if self.board.get(nr, nc) == opponent:
-    #             group = self.get_group(nr, nc)
-    #             if not self.has_liberty(group):
-    #                 self.remove_group(group)
-    #                 captured_any = True
-
-    #     # suicide move check
-    #     my_group = self.get_group(r, c)
-    #     if not self.has_liberty(my_group) and not captured_any:
-    #         self.board.set(r, c, EMPTY)
-    #         self.last_error = "Suicide move"
-    #         return False
-        
-    #     # KO check
-    #     if self.previous_board and self.board.grid == self.previous_board.grid:
-    #         # move back
-    #         self.board = old_board
-    #         self.last_error = "KO violation"
-    #         return False
-
-        
-    #     # successful move
-    #     self.pass_count = 0
-    #     self.switch_player()
-    #     self.previous_board = old_board
-    #     return True
-
-    # # =========================
-    # # PASS
-    # # =========================
-    # def pass_turn(self):
-    #     if self.game_over:
-    #         return
-
-    #     print(f"Player {self.current_player} PASS")
-
-    #     self.pass_count += 1
-
-    #     if self.pass_count >= 2:
-    #         self.game_over = True
-    #         self.final_score = self.get_score()
-    #         print("Game Over")
-    #         return
-
-    #     self.switch_player()
-
-    # # =========================
-    # # print the board (just for testing)
-    # # =========================
-    # def print_board(self):
-    #     symbols = {EMPTY: ".", BLACK: "X", WHITE: "O"}
-    #     for row in self.board.grid:
-    #         print(" ".join(symbols[x] for x in row))
-    #     print()
-
-    # def get_score(self):
-    #     from scoring import compute_score
-    #     return compute_score(self.board)
-    
-    # def get_legal_moves(self):
-    #     moves = []
-
-    #     for r in range(self.board.size):
-    #         for c in range(self.board.size):
-    #             if self.board.get(r, c) == EMPTY:
-    #                 # check move is legal
-    #                 temp = self.board.get(r, c)
-    #                 ok = self.is_legal_move(r, c)
-    #                 if ok:
-    #                     moves.append((r, c))
-
-    #     return moves
-
-
-    # def is_legal_move(self, r, c):
-    #     if self.board.get(r, c) != EMPTY:
-    #         return False
-
-    #     temp_board = self.board.copy()
-
-    #     # 临时落子
-    #     temp_board.set(r, c, self.current_player)
-
-    #     opponent = BLACK if self.current_player == WHITE else WHITE
-
-    #     # 模拟提子
-    #     captured_any = False
-    #     for nr, nc in self.neighbors(r, c):
-    #         if temp_board.get(nr, nc) == opponent:
-    #             group = self.get_group(nr, nc)
-    #             if not self.has_liberty(group):
-    #                 captured_any = True
-
-    #     # suicide check
-    #     my_group = self.get_group(r, c)
-    #     if not self.has_liberty(my_group) and not captured_any:
-    #         return False
-
-    #     return True
+        if state['previous_board_grid']:
+            self.previous_board = Board(self.board.size)
+            self.previous_board.grid = state['previous_board_grid']
+        else:
+            self.previous_board = None
+            
+        # only allow one undo 
+        self.last_state = None
+        return True
