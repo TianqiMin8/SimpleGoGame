@@ -1,5 +1,16 @@
 # TODO: Why I use
 
+# I use Heuristic search for this algorithm. It would go through all 
+# legal moves and score them, select the highest score one.
+# As it's a small board (9*9), occupying the center is important.
+# This ai would compute Manhattan Distance to the center, the closer 
+# to the center, the higher the score is.
+# I also set the capture reward to be high, so that ai can try to 
+# capture as many stones as it can.
+# If it's an illegal move, it would return -100, which avoid it has 
+# illegal move.
+
+
 import copy
 import random
 

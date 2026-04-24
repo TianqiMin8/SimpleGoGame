@@ -29,6 +29,14 @@ class Board:
         new_board.grid = [row[:] for row in self.grid]
         return new_board
 
+    def get_neighbors(self, r, c):
+        neighbors = []
+        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < self.size and 0 <= nc < self.size:
+                neighbors.append((nr, nc))
+        return neighbors
+
 
 class Game:
     def __init__(self, size=9):

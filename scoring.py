@@ -9,9 +9,7 @@ def compute_score(board, komi=2.5):
     black_territory = 0
     white_territory = 0
 
-    # =========================
-    # 1. 计算 territory
-    # =========================
+    # 1. Compute territory
     for r in range(size):
         for c in range(size):
 
@@ -40,7 +38,6 @@ def compute_score(board, komi=2.5):
                     elif val is not None:
                         borders.add(val)
 
-            # 只属于一方
             if len(borders) == 1:
                 owner = list(borders)[0]
                 if owner == BLACK:
@@ -48,15 +45,11 @@ def compute_score(board, komi=2.5):
                 elif owner == WHITE:
                     white_territory += len(region)
 
-    # =========================
-    # 2. 计算棋子
-    # =========================
+    # 2. Compute stones
     black_stones = sum(row.count(BLACK) for row in board.grid)
     white_stones = sum(row.count(WHITE) for row in board.grid)
 
-    # =========================
-    # 3. 总分
-    # =========================
+    # 3. Total score
     black_score = black_stones + black_territory
     white_score = white_stones + white_territory + komi
 

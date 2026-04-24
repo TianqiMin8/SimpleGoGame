@@ -128,6 +128,8 @@ class GoUI:
                     
                     pygame.draw.circle(self.screen, mark_color, pos, mark_radius)
         
+        self.draw_liberties()
+
         # Side bar
         pygame.draw.rect(self.screen, (50, 50, 60), (self.sidebar_x, 0, SIDEBAR_WIDTH, HEIGHT))
 
@@ -270,6 +272,56 @@ class GoUI:
         self.screen.blit(white, (box.x + 40, box.y + 70))
         self.screen.blit(winner, (box.x + 40, box.y + 110))
         self.screen.blit(margin, (box.x + 40, box.y + 150))
+
+    # only show liberty for the current player
+    def draw_liberties(self):
+        liberty_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        current_player = self.game.current_player
+        
+        color = (0, 0, 0, 80) if current_player == BLACK else (255, 255, 255, 120)
+        radius = 6
+        drawn_pos = set()
+
+        for r in range(BOARD_SIZE):
+            for c in range(BOARD_SIZE):
+                if self.game.board.get(r, c) == current_player:
+                    for nr, nc in self.game.board.get_neighbors(r, c):
+                        if self.game.board.get(nr, nc) == EMPTY:
+                            if (nr, nc) not in drawn_pos:
+                                pos = self.board_to_pixel(nr, nc)
+                                pygame.draw.circle(liberty_surface, color, pos, radius)
+                                drawn_pos.add((nr, nc))
+
+        self.screen.blit(liberty_surface, (0, 0))
+
+    # Another way to draw liberties,     
+    # Draw both side's liberties, point shared liberties to red
+    # def draw_liberties(self):
+    #     liberty_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    #     BLACK_COLOR = (0, 0, 0, 80)        
+    #     WHITE_COLOR = (255, 255, 255, 120)  
+    #     SHARED_COLOR = (255, 50, 50, 150)  
+    #     radius = 6
+    #     liberty_map = {}
+    #     for r in range(BOARD_SIZE):
+    #         for c in range(BOARD_SIZE):
+    #             stone = self.game.board.get(r, c)
+    #             if stone == EMPTY: continue
+    #             for nr, nc in self.game.board.get_neighbors(r, c):
+    #                 if self.game.board.get(nr, nc) == EMPTY:
+    #                     if (nr, nc) not in liberty_map:
+    #                         liberty_map[(nr, nc)] = set()
+    #                     liberty_map[(nr, nc)].add(stone)
+    #     for (r, c), owners in liberty_map.items():
+    #         pos = self.board_to_pixel(r, c)
+    #         if len(owners) > 1:
+    #             # a shared liberty
+    #             pygame.draw.circle(liberty_surface, SHARED_COLOR, pos, radius + 2) # 稍微大一点
+    #         else:
+    #             owner = list(owners)[0]
+    #             color = BLACK_COLOR if owner == BLACK else WHITE_COLOR
+    #             pygame.draw.circle(liberty_surface, color, pos, radius)
+    #     self.screen.blit(liberty_surface, (0, 0))
 
 if __name__ == "__main__":
     GoUI().run()
