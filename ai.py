@@ -40,20 +40,18 @@ class SmartAI:
         r, c = move
         score = 0
         
-        # 1. 基础分：占据中心位置 (9x9 棋盘的 4,4 是中心)
+        # 1. Basic: center
         dist_to_center = abs(r - 4) + abs(c - 4)
         score += (8 - dist_to_center) * 0.5 
 
-        # 2. 模拟落子看收益
-        # 注意：这里只模拟一步，不跑完整个游戏，所以极快
+        # 2. simulate one step to check result
         original_grid = [row[:] for row in game.board.grid]
         captured_count = self.get_capture_count(game, move)
-        score += captured_count * 10  # 提子奖励极高
+        score += captured_count * 10  # high reward for capture
 
         return score
 
     def get_capture_count(self, game, move):
-        # 简化版逻辑：只看这一步能提掉对方多少子
-        # 我们可以复用你 play_move 里的逻辑，但只运行一次
+        # Check how many stones can get captured
         legal, captured, _ = game._simulate_move(move[0], move[1], self.color)
         return len(captured) if legal else -100

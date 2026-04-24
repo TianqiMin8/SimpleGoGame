@@ -7,6 +7,7 @@ CELL_SIZE = 60
 MARGIN = 40
 
 BG_COLOR = (220, 179, 92)
+COVER_COLOR = (48, 48, 48)
 LINE_COLOR = (0, 0, 0)
 BLACK_COLOR = (20, 20, 20)
 WHITE_COLOR = (240, 240, 240)
@@ -22,13 +23,33 @@ class GoUI:
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         pygame.display.set_caption("Wang Go Game")
 
-        self.game = Game(BOARD_SIZE)
+
+        self.state = "MENU"  
+        self.mode = "PVE"    
+        self.first_player = BLACK 
+
+        self.game = None 
         self.sidebar_x = (BOARD_SIZE - 1) * CELL_SIZE + MARGIN * 2
+        
+        # Menu button
+        btn_w, btn_h = 160, 40  
+        spacing = 20            
+        center_x = WIDTH // 2
+        self.pvp_btn = pygame.Rect(center_x - btn_w - spacing//2, 180, btn_w, btn_h)
+
+        self.pve_btn = pygame.Rect(center_x + spacing//2, 180, btn_w, btn_h)
+
+        self.black_first_btn = pygame.Rect(center_x - btn_w - spacing//2, 280, btn_w, btn_h)
+        self.white_first_btn = pygame.Rect(center_x + spacing//2, 280, btn_w, btn_h)
+
+        self.start_btn = pygame.Rect(center_x - 100, 400, 200, 60)
+
+        
+        self.undo_button = pygame.Rect(self.sidebar_x + 40, HEIGHT - 130, 120, 40)
         self.pass_button = pygame.Rect(self.sidebar_x + 40, HEIGHT - 70, 120, 40)
         self.font = pygame.font.SysFont("Arial", 20)
+        self.title_font = pygame.font.SysFont("Arial", 40, bold=True)
 
-        self.undo_button = pygame.Rect(self.sidebar_x + 40, HEIGHT - 130, 120, 40) # x, y, 宽度, 高度 (根据你的窗口大小调整)
-        
 
     def board_to_pixel(self, r, c):
         x = MARGIN + c * CELL_SIZE
@@ -39,6 +60,28 @@ class GoUI:
         c = round((x - MARGIN) / CELL_SIZE)
         r = round((y - MARGIN) / CELL_SIZE)
         return r, c
+
+    def draw_menu(self):
+        self.screen.fill(COVER_COLOR)
+        title = self.title_font.render("Wang's Go Game", True, WHITE_COLOR)
+        self.screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
+
+        self._draw_option_btn(self.pvp_btn, "Human vs Human", self.mode == "PVP")
+        self._draw_option_btn(self.pve_btn, "Human vs AI", self.mode == "PVE")
+
+        self._draw_option_btn(self.black_first_btn, "Human first", self.first_player == BLACK)
+        self._draw_option_btn(self.white_first_btn, "AI first", self.first_player == WHITE)
+
+        pygame.draw.rect(self.screen, (0, 150, 0), self.start_btn, border_radius=10)
+        start_txt = self.font.render("START GAME", True, (255, 255, 255))
+        self.screen.blit(start_txt, start_txt.get_rect(center=self.start_btn.center))
+
+    def _draw_option_btn(self, rect, text, is_selected):
+        color = (206, 158, 67) if is_selected else (200, 200, 200)
+        pygame.draw.rect(self.screen, color, rect, border_radius=5)
+        pygame.draw.rect(self.screen, (0, 0, 0), rect, 2, border_radius=5)
+        txt = self.font.render(text, True, (0, 0, 0))
+        self.screen.blit(txt, txt.get_rect(center=rect.center))
 
     def draw(self):
         self.screen.fill(BG_COLOR)
@@ -141,47 +184,62 @@ class GoUI:
         clock = pygame.time.Clock()
 
         while True:
+            # --- 1. 处理所有事件 (鼠标、键盘、关闭窗口) ---
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.game.game_over:
-                        continue
-                    x, y = pygame.mouse.get_pos()
-                    # click to PASS
-                    if self.pass_button.collidepoint(x, y):
-                        self.game.pass_turn()
-                        continue
+                    x, y = event.pos
                     
-                    # click to UNDO
-                    if self.undo_button.collidepoint(x, y):
-                        if self.game.undo():
-                            print("Undo success")
+                    if self.state == "MENU":
+                        if self.pvp_btn.collidepoint(x, y): self.mode = "PVP"
+                        if self.pve_btn.collidepoint(x, y): self.mode = "PVE"
+                        if self.black_first_btn.collidepoint(x, y): self.first_player = BLACK
+                        if self.white_first_btn.collidepoint(x, y): self.first_player = WHITE
+                        
+                        if self.start_btn.collidepoint(x, y):
+                            self.game = Game(BOARD_SIZE)
+                            
+                            self.game.current_player = BLACK 
+                            
+                            self.user_color = self.first_player 
+                            
+                            self.state = "PLAYING"
+
+                    elif self.state == "PLAYING":
+                        if self.game.game_over:
+                            continue
+                        
+                        if self.pass_button.collidepoint(x, y):
+                            self.game.pass_turn()
+                        elif self.undo_button.collidepoint(x, y):
+                            self.game.undo()
                         else:
-                            print("Cannot undo")
-                        continue
-                    # click the board
-                    r, c = self.pixel_to_board(x, y)
-                    self.game.play_move(r, c)
-                
-                if event.type == pygame.KEYDOWN:
+                            r, c = self.pixel_to_board(x, y)
+                            if 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE:
+                                self.game.play_move(r, c)
+
+                if event.type == pygame.KEYDOWN and self.state == "PLAYING":
                     if event.key == pygame.K_u:
-                        if self.game.undo():
-                            print("Undo success")
+                        self.game.undo()
+
+            if self.state == "PLAYING" and not self.game.game_over:
+                if self.mode == "PVE":
+                    if self.game.current_player != self.user_color:
+                        move = self.game.ai.select_move(self.game)
+                        if move is None:
+                            self.game.pass_turn()
                         else:
-                            print("Cannot undo")
+                            self.game.play_move(*move)
 
-            if not self.game.game_over:
+            if self.state == "MENU":
+                self.draw_menu()
+            else:
+                self.draw()
 
-                if self.game.current_player == WHITE:  # AI是白
-                    move = self.game.ai.select_move(self.game)
-
-                    if move is None:
-                        self.game.pass_turn()
-                    else:
-                        self.game.play_move(*move)
-            self.draw()
+            pygame.display.flip()
             clock.tick(60)
 
     def draw_game_over(self):
@@ -203,9 +261,6 @@ class GoUI:
 
         font = pygame.font.SysFont("Arial", 24)
 
-        # =========================
-        # 3. 内容
-        # =========================
         black = font.render(f"Black: {score['black']:.1f}", True, (255,255,255))
         white = font.render(f"White: {score['white']:.1f}", True, (255,255,255))
         winner = font.render(f"Winner: {score['winner']}", True, (255,215,0))

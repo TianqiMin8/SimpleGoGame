@@ -1,7 +1,6 @@
 # core_game.py
-# TODO: Choose AI / Human can play first
-# TODO: Allow human play all the move
-
+# TODO: ai: whether there's a capture or not
+# TODO: 如果已经确定一个领地是自己的，那就不在领地下，而是去对方领地看看能不能capture更多
 
 from collections import deque
 from ai import SmartAI
