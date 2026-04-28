@@ -153,6 +153,7 @@ class GoUI:
         self.draw_liberties()
 
         # Side bar
+        text_x = self.sidebar_x + 20
         pygame.draw.rect(self.screen, (50, 50, 60), (self.sidebar_x, 0, SIDEBAR_WIDTH, HEIGHT))
 
         # current stage
@@ -166,7 +167,6 @@ class GoUI:
             self.screen.blit(over, (self.sidebar_x + 20, 80))
         
         # Draw captured count
-        text_x = self.sidebar_x + 20
         b = self.game.captured[BLACK]
         w = self.game.captured[WHITE]
 
@@ -180,7 +180,7 @@ class GoUI:
         scores = self.game.get_score()
         black_score = scores['black']
         white_score = scores['white']
-        score_y = 90 
+        score_y = 250 
 
         b_text = self.font.render(f"Black: {black_score}", True, (255, 255, 255))
         w_text = self.font.render(f"White: {white_score}", True, (255, 255, 255))
