@@ -1,7 +1,3 @@
-# core_game.py
-# TODO: ai: whether there's a capture or not
-# TODO: 如果已经确定一个领地是自己的，那就不在领地下，而是去对方领地看看能不能capture更多
-
 from collections import deque
 from ai import Heuristic
 
@@ -50,6 +46,7 @@ class Game:
         self.ai = Heuristic(WHITE)
         self.last_move = None  # form: (row, col)
         self.last_state = None
+        self.komi = 2.5
 
     def _get_current_state(self):
         """Save current status into history"""
@@ -216,7 +213,7 @@ class Game:
 
     def get_score(self):
         from scoring import compute_score
-        return compute_score(self.board)
+        return compute_score(self.board, self.komi)
     
 
     def undo(self):

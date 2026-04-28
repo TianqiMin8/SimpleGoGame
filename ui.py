@@ -165,15 +165,28 @@ class GoUI:
             over = self.font.render("GAME OVER", True, (255, 100, 100))
             self.screen.blit(over, (self.sidebar_x + 20, 80))
         
-
+        # Draw captured count
+        text_x = self.sidebar_x + 20
         b = self.game.captured[BLACK]
         w = self.game.captured[WHITE]
 
         text_b = self.font.render(f"Black captured: {b}", True, (255,255,255))
         text_w = self.font.render(f"White captured: {w}", True, (255,255,255))
 
-        self.screen.blit(text_b, (self.sidebar_x + 20, 160))
-        self.screen.blit(text_w, (self.sidebar_x + 20, 190))
+        self.screen.blit(text_b, (text_x + 20, 160))
+        self.screen.blit(text_w, (text_x + 20, 190))
+
+        # Draw current score
+        scores = self.game.get_score()
+        black_score = scores['black']
+        white_score = scores['white']
+        score_y = 90 
+
+        b_text = self.font.render(f"Black: {black_score}", True, (255, 255, 255))
+        w_text = self.font.render(f"White: {white_score}", True, (255, 255, 255))
+        self.screen.blit(b_text, (text_x + 20, score_y))
+        self.screen.blit(w_text, (text_x + 20, score_y + 30))
+
 
         # Reset button
         pygame.draw.rect(self.screen, (150, 50, 50), self.reset_button, border_radius=5)
