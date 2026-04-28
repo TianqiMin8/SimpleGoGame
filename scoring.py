@@ -22,22 +22,17 @@ def compute_score(board, komi=2.5):
 
             while queue:
                 x, y = queue.popleft()
-
                 if (x, y) in visited:
                     continue
-
                 visited.add((x, y))
                 region.add((x, y))
-
                 for dx, dy in [(1,0), (-1,0), (0,1), (0,-1)]:
                     nx, ny = x + dx, y + dy
                     val = board.get(nx, ny)
-
                     if val == EMPTY:
                         queue.append((nx, ny))
                     elif val is not None:
                         borders.add(val)
-
             if len(borders) == 1:
                 owner = list(borders)[0]
                 if owner == BLACK:

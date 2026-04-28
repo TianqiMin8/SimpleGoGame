@@ -50,6 +50,12 @@ class GoUI:
         self.font = pygame.font.SysFont("Arial", 20)
         self.title_font = pygame.font.SysFont("Arial", 40, bold=True)
 
+        # Set reset button position
+        self.reset_button = pygame.Rect(self.sidebar_x + 40, HEIGHT - 190, 120, 40)
+
+        # Set return button position
+        self.return_button = pygame.Rect(WIDTH//2 - 60, HEIGHT//2 + 150, 120, 40)
+
 
     def board_to_pixel(self, r, c):
         x = MARGIN + c * CELL_SIZE
@@ -85,6 +91,22 @@ class GoUI:
 
     def draw(self):
         self.screen.fill(BG_COLOR)
+
+        # draw lines and labels
+        label_font = pygame.font.SysFont("Arial", 14)
+        letters = "ABCDEFGHI" 
+
+        for i in range(BOARD_SIZE):
+            letter_text = label_font.render(letters[i], True, (50, 50, 50))
+            x, y = self.board_to_pixel(0, i) 
+            self.screen.blit(letter_text, (x - letter_text.get_width() // 2, MARGIN - 25))
+            bottom_y = MARGIN + (BOARD_SIZE - 1) * CELL_SIZE
+            self.screen.blit(letter_text, (x - letter_text.get_width() // 2, bottom_y + 10))
+            number_text = label_font.render(str(BOARD_SIZE - i), True, (50, 50, 50))
+            x, y = self.board_to_pixel(i, 0) 
+            self.screen.blit(number_text, (MARGIN - 30, y - number_text.get_height() // 2))
+            right_x = MARGIN + (BOARD_SIZE - 1) * CELL_SIZE
+            self.screen.blit(number_text, (right_x + 15, y - number_text.get_height() // 2))
 
         # draw grids
         for i in range(BOARD_SIZE):
@@ -153,6 +175,11 @@ class GoUI:
         self.screen.blit(text_b, (self.sidebar_x + 20, 160))
         self.screen.blit(text_w, (self.sidebar_x + 20, 190))
 
+        # Reset button
+        pygame.draw.rect(self.screen, (150, 50, 50), self.reset_button, border_radius=5)
+        reset_txt = self.font.render("RESET", True, (255, 255, 255))
+        self.screen.blit(reset_txt, reset_txt.get_rect(center=self.reset_button.center))
+
         # Undo button 
         # current_undo_color = self.undo_btn_color if self.game.last_state else (150, 150, 150)
         pygame.draw.rect(self.screen, (0, 0, 0), self.undo_button)
@@ -186,7 +213,7 @@ class GoUI:
         clock = pygame.time.Clock()
 
         while True:
-            # --- 1. 处理所有事件 (鼠标、键盘、关闭窗口) ---
+            # Handle events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -203,17 +230,20 @@ class GoUI:
                         
                         if self.start_btn.collidepoint(x, y):
                             self.game = Game(BOARD_SIZE)
-                            
-                            self.game.current_player = BLACK 
-                            
-                            self.user_color = self.first_player 
-                            
+                            self.game.current_player = BLACK                             
+                            self.user_color = self.first_player                            
                             self.state = "PLAYING"
 
                     elif self.state == "PLAYING":
                         if self.game.game_over:
+                            if self.return_button.collidepoint(x, y):
+                                self.state = "MENU" 
+                                continue
+                        if self.reset_button.collidepoint(x, y):
+                            self.game = Game(BOARD_SIZE) 
+                            self.game.current_player = BLACK
                             continue
-                        
+
                         if self.pass_button.collidepoint(x, y):
                             self.game.pass_turn()
                         elif self.undo_button.collidepoint(x, y):
@@ -272,6 +302,10 @@ class GoUI:
         self.screen.blit(white, (box.x + 40, box.y + 70))
         self.screen.blit(winner, (box.x + 40, box.y + 110))
         self.screen.blit(margin, (box.x + 40, box.y + 150))
+
+        pygame.draw.rect(self.screen, (100, 100, 100), self.return_button, border_radius=5)
+        ret_txt = self.font.render("RETURN", True, (255, 255, 255))
+        self.screen.blit(ret_txt, ret_txt.get_rect(center=self.return_button.center))
 
     # only show liberty for the current player
     def draw_liberties(self):

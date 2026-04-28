@@ -3,7 +3,7 @@
 # TODO: 如果已经确定一个领地是自己的，那就不在领地下，而是去对方领地看看能不能capture更多
 
 from collections import deque
-from ai import SmartAI
+from ai import Heuristic
 
 EMPTY = 0
 BLACK = 1
@@ -47,7 +47,7 @@ class Game:
         self.previous_board = None
         self.last_error = ""
         self.captured = {BLACK: 0, WHITE: 0}
-        self.ai = SmartAI(WHITE)
+        self.ai = Heuristic(WHITE)
         self.last_move = None  # form: (row, col)
         self.last_state = None
 
@@ -79,7 +79,7 @@ class Game:
         # 1. temp move
         self.board.set(r, c, player)
         
-        # 2. check neighbors are gwt or not
+        # 2. check neighbors are get or not
         for nr, nc in self.neighbors(r, c):
             if self.board.get(nr, nc) == opponent:
                 group = self.get_group(nr, nc)
